@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splash — Remove Image Backgrounds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:   #080808;
+      --paper: #ffffff;
+      --mist:  #f5f5f3;
+      --ash:   #d9d9d5;
+      --stone: #9a9a95;
+      --dim:   #64645e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 2.75rem;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--ash);
+    }
+
+    .wordmark {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: baseline;
+      line-height: 1;
+    }
+
+    .wordmark-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.95rem;
+      letter-spacing: -0.045em;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .wl { font-weight: 300; font-style: italic; }
+    .wb { font-weight: 600; font-style: normal; }
+
+    .nav-badge {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--stone);
+      font-weight: 300;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8rem 1.5rem 5rem;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.67rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--stone);
+      font-weight: 300;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.1s ease forwards;
+    }
+
+    .eyebrow-dash { width: 20px; height: 1px; background: var(--ash); }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(3.2rem, 7.5vw, 7rem);
+      line-height: 1.03;
+      letter-spacing: -0.045em;
+      margin-bottom: 1.5rem;
+      max-width: 13ch;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.2s ease forwards;
+    }
+
+    h1 em { font-style: italic; font-weight: 300; }
+
+    .hero-sub {
+      font-size: 0.95rem;
+      color: var(--dim);
+      font-weight: 300;
+      margin-bottom: 3.5rem;
+      letter-spacing: 0.01em;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.3s ease forwards;
+    }
+
+    /* ── DROP ZONE ── */
+    .drop-wrap {
+      width: 100%;
+      max-width: 700px;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.4s ease forwards;
+    }
+
+    .drop-zone {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3/2;
+      border: 1.5px dashed var(--ash);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.22s, background 0.22s;
+      overflow: hidden;
+      background: var(--paper);
+    }
+
+    .drop-zone:hover {
+      border-color: var(--stone);
+      background: var(--mist);
+    }
+
+    .drop-zone.is-over {
+      border-color: var(--ink);
+      border-style: solid;
+      background: var(--mist);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Inner content */
+    .dz-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.1rem;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .dz-icon {
+      width: 52px;
+      height: 52px;
+    }
+
+    .dz-headline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.55rem;
+      font-weight: 400;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+    }
+
+    .dz-sub {
+      font-size: 0.82rem;
+      color: var(--stone);
+      font-weight: 300;
+    }
+
+    .dz-types {
+      font-size: 0.63rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ash);
+    }
+
+    /* Processing overlay */
+    .dz-processing {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid var(--ash);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .process-label {
+      font-size: 0.8rem;
+      color: var(--stone);
+      font-weight: 300;
+      letter-spacing: 0.04em;
+    }
+
+    .process-dots::after {
+      content: '';
+      animation: dots 1.4s steps(3, end) infinite;
+    }
+
+    @keyframes dots {
+      0%   { content: ''; }
+      33%  { content: '.'; }
+      66%  { content: '..'; }
+      100% { content: '...'; }
+    }
+
+    /* Features strip */
+    .features {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .feat {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.73rem;
+      color: var(--stone);
+      font-weight: 300;
+      letter-spacing: 0.02em;
+    }
+
+    .feat-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--ash);
+      flex-shrink: 0;
+    }
+
+    /* ── RESULT ── */
+    .result-wrap {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      width: 100%;
+      max-width: 700px;
+      animation: fadeUp 0.5s ease;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      border: 1px solid var(--ash);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--ash);
+      width: 100%;
+    }
+
+    .result-pane {
+      background: var(--paper);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-pane.checker {
+      background:
+        repeating-conic-gradient(#ebebeb 0% 25%, #ffffff 0% 50%)
+        0 0 / 14px 14px;
+    }
+
+    .pane-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--stone);
+      padding: 0.55rem 0.9rem;
+      background: var(--paper);
+      border-bottom: 1px solid var(--ash);
+    }
+
+    .pane-img {
+      width: 100%;
+      height: 280px;
+      object-fit: contain;
+      display: block;
+      padding: 1rem;
+    }
+
+    /* ── BUTTONS ── */
+    .result-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.78rem 2rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 400;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.14s ease;
+      text-decoration: none;
+    }
+
+    .btn-dark {
+      background: var(--ink);
+      color: var(--paper);
+      border: 1.5px solid var(--ink);
+    }
+
+    .btn-dark:hover { background: #2b2b2b; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 1.5px solid var(--ash);
+    }
+
+    .btn-ghost:hover { border-color: var(--ink); }
+
+    /* ── KEYFRAMES ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2rem 2.75rem;
+      border-top: 1px solid var(--ash);
+      margin-top: 6rem;
+      font-size: 0.73rem;
+      color: var(--stone);
+      letter-spacing: 0.03em;
+      font-weight: 300;
+    }
+
+    footer .wordmark-text { font-size: 1.35rem; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      nav { padding: 1rem 1.25rem; }
+      h1 { font-size: 2.8rem; }
+      .result-grid { grid-template-columns: 1fr; }
+      .pane-img { height: 220px; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="wordmark">
+      <span class="wordmark-text"><span class="wl">spl</span><span class="wb">ash</span></span>
+    </a>
+    <span class="nav-badge">Background Removal</span>
+  </nav>
+
+  <section class="hero">
+
+    <div class="eyebrow">
+      <span class="eyebrow-dash"></span>
+      Free &middot; No sign-up &middot; Instant
+      <span class="eyebrow-dash"></span>
+    </div>
+
+    <h1>Remove any <em>background,</em> instantly.</h1>
+    <p class="hero-sub">Drop an image below. Get a clean, transparent PNG in seconds.</p>
+
+    <!-- DROP ZONE -->
+    <div class="drop-wrap" id="dropWrap">
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/gif">
+
+        <div class="dz-inner" id="dzDefault">
+          <svg class="dz-icon" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="7" y="13" width="38" height="28" rx="3" stroke="#d9d9d5" stroke-width="1.4"/>
+            <circle cx="19" cy="24" r="4.5" stroke="#d9d9d5" stroke-width="1.4"/>
+            <path d="M7 33 L20 22 L31 31 L37 25 L45 33" stroke="#d9d9d5" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+            <line x1="26" y1="6" x2="26" y2="1" stroke="#9a9a95" stroke-width="1.2" stroke-linecap="round"/>
+            <polyline points="23,4 26,1 29,4" stroke="#9a9a95" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+          </svg>
+          <p class="dz-headline">Drop your image here</p>
+          <p class="dz-sub">or click anywhere in this area to browse</p>
+          <p class="dz-types">PNG &nbsp;&middot;&nbsp; JPG &nbsp;&middot;&nbsp; WebP &nbsp;&middot;&nbsp; up to 10 MB</p>
+        </div>
+
+        <div class="dz-processing" id="dzProcessing">
+          <div class="spinner"></div>
+          <p class="process-label">Removing background<span class="process-dots"></span></p>
+        </div>
+      </div>
+
+      <div class="features">
+        <span class="feat"><span class="feat-dot"></span>HD quality output</span>
+        <span class="feat"><span class="feat-dot"></span>Processed in your browser</span>
+        <span class="feat"><span class="feat-dot"></span>PNG with transparency</span>
+        <span class="feat"><span class="feat-dot"></span>No watermarks</span>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="result-wrap" id="resultWrap">
+      <div class="result-grid">
+        <div class="result-pane">
+          <div class="pane-label">Original</div>
+          <img class="pane-img" id="imgOriginal" src="" alt="Original image">
+        </div>
+        <div class="result-pane checker">
+          <div class="pane-label">Background removed</div>
+          <img class="pane-img" id="imgResult" src="" alt="Result with background removed">
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn btn-dark" id="btnDownload">↓ &nbsp;Download PNG</button>
+        <button class="btn btn-ghost" id="btnReset">Try another image</button>
+      </div>
+    </div>
+
+  </section>
+
+  <footer>
+    <a href="/" class="wordmark" style="text-decoration:none">
+      <span class="wordmark-text"><span class="wl">spl</span><span class="wb">ash</span></span>
+    </a>
+    <span>Free forever. No account, no watermarks.</span>
+    <span>&copy; By Alade Wealth</span>
+  </footer>
+
+  <script>
+    const dropZone     = document.getElementById('dropZone');
+    const fileInput    = document.getElementById('fileInput');
+    const dzDefault    = document.getElementById('dzDefault');
+    const dzProcessing = document.getElementById('dzProcessing');
+    const dropWrap     = document.getElementById('dropWrap');
+    const resultWrap   = document.getElementById('resultWrap');
+    const imgOriginal  = document.getElementById('imgOriginal');
+    const imgResult    = document.getElementById('imgResult');
+    const btnDownload  = document.getElementById('btnDownload');
+    const btnReset     = document.getElementById('btnReset');
+
+    let resultBlob = null;
+
+    /* ── Drag & Drop ── */
+    ['dragenter','dragover'].forEach(ev => {
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('is-over'); });
+    });
+
+    ['dragleave','dragend'].forEach(ev => {
+      dropZone.addEventListener(ev, () => dropZone.classList.remove('is-over'));
+    });
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('is-over');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) handleFile(file);
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    });
+
+    /* ── Core flow ── */
+    function handleFile(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        imgOriginal.src = e.target.result;
+        setState('processing');
+        processImage(file, e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function processImage(file, dataUrl) {
+      const startTime = Date.now();
+
+      const blob = await removeBackground(dataUrl);
+      resultBlob = blob;
+      imgResult.src = URL.createObjectURL(blob);
+
+      // Minimum 1.6s for UX — feels intentional, not instant-fake
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 1600) await sleep(1600 - elapsed);
+
+      setState('result');
+    }
+
+    function removeBackground(dataUrl) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const W = img.width, H = img.height;
+          const canvas = document.createElement('canvas');
+          canvas.width = W; canvas.height = H;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          const iData = ctx.getImageData(0, 0, W, H);
+          const d = iData.data;
+
+          // Sample corners to detect background color
+          const corners = [
+            [d[0], d[1], d[2]],
+            [d[(W-1)*4], d[(W-1)*4+1], d[(W-1)*4+2]],
+            [d[(H-1)*W*4], d[(H-1)*W*4+1], d[(H-1)*W*4+2]],
+            [d[((H-1)*W + W-1)*4], d[((H-1)*W + W-1)*4+1], d[((H-1)*W + W-1)*4+2]]
+          ];
+
+          // Average corner color
+          const bgR = Math.round(corners.reduce((s,c) => s+c[0], 0) / 4);
+          const bgG = Math.round(corners.reduce((s,c) => s+c[1], 0) / 4);
+          const bgB = Math.round(corners.reduce((s,c) => s+c[2], 0) / 4);
+          const threshold = 50;
+
+          for (let i = 0; i < d.length; i += 4) {
+            const dr = d[i] - bgR, dg = d[i+1] - bgG, db = d[i+2] - bgB;
+            const dist = Math.sqrt(dr*dr + dg*dg + db*db);
+            if (dist < threshold) {
+              // Soft edge: fade alpha near threshold
+              const alpha = Math.round((dist / threshold) * 255);
+              d[i+3] = Math.min(d[i+3], alpha);
+            }
+          }
+
+          ctx.putImageData(iData, 0, 0);
+          canvas.toBlob(resolve, 'image/png');
+        };
+        img.src = dataUrl;
+      });
+    }
+
+    /* ── UI State Machine ── */
+    function setState(state) {
+      if (state === 'processing') {
+        dzDefault.style.display = 'none';
+        dzProcessing.style.display = 'flex';
+        fileInput.disabled = true;
+        dropWrap.style.display = 'block';
+        resultWrap.style.display = 'none';
+      } else if (state === 'result') {
+        dropWrap.style.display = 'none';
+        resultWrap.style.display = 'flex';
+      } else if (state === 'idle') {
+        dzDefault.style.display = 'flex';
+        dzProcessing.style.display = 'none';
+        fileInput.disabled = false;
+        dropWrap.style.display = 'block';
+        resultWrap.style.display = 'none';
+        imgOriginal.src = '';
+        imgResult.src = '';
+        resultBlob = null;
+        fileInput.value = '';
+      }
+    }
+
+    /* ── Actions ── */
+    btnDownload.addEventListener('click', () => {
+      if (!resultBlob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(resultBlob);
+      a.download = 'splash-output.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    btnReset.addEventListener('click', () => setState('idle'));
+
+    /* ── Utils ── */
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+  </script>
+
+</body>
+</html>
